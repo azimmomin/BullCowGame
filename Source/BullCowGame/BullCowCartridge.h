@@ -22,6 +22,7 @@ private:
 	bool IsIsogram(const FString& Guess) const;
 	void EndGame();
 private:
+    TArray<FString> EligibleIsograms;
 	FString HiddenWord;
 	int32 RemainingGuesses;
 	bool bGameOver;
