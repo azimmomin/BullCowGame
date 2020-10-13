@@ -1,5 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "BullCowCartridge.h"
+#include "HiddenWordList.h"
 
 void UBullCowCartridge::BeginPlay()
 {
@@ -9,7 +10,7 @@ void UBullCowCartridge::BeginPlay()
 
 void UBullCowCartridge::SetupGame()
 {
-    HiddenWord = TEXT("upstage");
+    HiddenWord = ChooseHiddenWord();
     RemainingGuesses = HiddenWord.Len();
     bGameOver = false;
 
@@ -17,6 +18,12 @@ void UBullCowCartridge::SetupGame()
     PrintLine(TEXT("Guess the %i character word.\nYou have %i guesses."), HiddenWord.Len(), RemainingGuesses);
     PrintLine(TEXT("Type in your guess and press enter to\ncontinue."));
 }
+
+FString UBullCowCartridge::ChooseHiddenWord()
+{
+    return TEXT("upstage");
+}
+
 
 void UBullCowCartridge::OnInput(const FString &Input)
 {
@@ -72,6 +79,18 @@ void UBullCowCartridge::UpdateStateForGuess(const FString &Guess)
 
 bool UBullCowCartridge::IsIsogram(const FString &Guess) const
 {
+    if (Guess.Len() <= 1)
+        return true;
+
+    for (int32 i = 0; i < Guess.Len() - 1; i++)
+    {
+        for (int32 j = i + 1; j < Guess.Len(); j++)
+        {
+            if (Guess[i] == Guess[j])
+                return false;
+        }
+    }
+
     return true;
 }
 

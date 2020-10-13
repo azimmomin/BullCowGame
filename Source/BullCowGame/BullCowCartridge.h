@@ -16,6 +16,7 @@ public:
 	virtual void OnInput(const FString &Input) override;
 private:
 	void SetupGame();
+	FString ChooseHiddenWord();
 	bool IsGuessValid(const FString& Guess) const;
     void UpdateStateForGuess(const FString& Guess);
 	bool IsIsogram(const FString& Guess) const;
