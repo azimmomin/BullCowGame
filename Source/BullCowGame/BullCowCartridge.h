@@ -6,21 +6,29 @@
 #include "Console/Cartridge.h"
 #include "BullCowCartridge.generated.h"
 
+struct FBullCowCount
+{
+	int32 Bulls = 0;
+	int32 Cows = 0;
+};
+
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class BULLCOWGAME_API UBullCowCartridge : public UCartridge
 {
 	GENERATED_BODY()
 
 public:
+	static bool IsIsogram(const FString& Guess);
 	virtual void BeginPlay() override;
 	virtual void OnInput(const FString &Input) override;
 private:
+    void LoadEligibleIsograms();
 	void SetupGame();
-	FString ChooseHiddenWord();
+	FString ChooseAndRemoveHiddenWord(TArray<FString>& Isograms) const;
 	bool IsGuessValid(const FString& Guess) const;
     void UpdateStateForGuess(const FString& Guess);
-	bool IsIsogram(const FString& Guess) const;
 	void EndGame();
+	FBullCowCount GetBullsAndCows(const FString& Guess) const;
 private:
     TArray<FString> EligibleIsograms;
 	FString HiddenWord;

@@ -3,20 +3,44 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 
+bool UBullCowCartridge::IsIsogram(const FString &Guess)
+{
+    if (Guess.Len() <= 1)
+        return true;
+
+    for (int32 i = 0; i < Guess.Len() - 1; i++)
+    {
+        for (int32 j = i + 1; j < Guess.Len(); j++)
+        {
+            if (Guess[i] == Guess[j])
+                return false;
+        }
+    }
+
+    return true;
+}
+
 void UBullCowCartridge::BeginPlay()
 {
     Super::BeginPlay();
-    
-    const FString WordListPath = FPaths::ProjectContentDir() / TEXT("WordLists/HiddenWordList.txt");
-    FFileHelper::LoadFileToStringArray(EligibleIsograms, *WordListPath);
-
+    LoadEligibleIsograms();
     SetupGame();
+}
+
+void UBullCowCartridge::LoadEligibleIsograms()
+{
+    const FString WordListPath = FPaths::ProjectContentDir() / TEXT("WordLists/HiddenWordList.txt");
+    FFileHelper::LoadFileToStringArrayWithPredicate(
+        EligibleIsograms, 
+        *WordListPath, 
+        [](const FString& Word) { return Word.Len() > 3 && Word.Len() < 8 && IsIsogram(Word); }
+    );
 }
 
 void UBullCowCartridge::SetupGame()
 {
-    HiddenWord = ChooseHiddenWord();
-    RemainingGuesses = HiddenWord.Len() - 1;
+    HiddenWord = ChooseAndRemoveHiddenWord(EligibleIsograms);
+    RemainingGuesses = HiddenWord.Len();
     bGameOver = false;
 
     PrintLine(TEXT("Welcome to Bull Cows!"));
@@ -24,9 +48,21 @@ void UBullCowCartridge::SetupGame()
     PrintLine(TEXT("Type in your guess and press enter to\ncontinue."));
 }
 
-FString UBullCowCartridge::ChooseHiddenWord()
+FString UBullCowCartridge::ChooseAndRemoveHiddenWord(TArray<FString>& Isograms) const
 {
-    return TEXT("upstage");
+    if (Isograms.Num() <= 0)
+    {
+        // Return a fallback in the off chance the array is empty.
+        return TEXT("upstage");
+    }
+
+    int32 index = FMath::RandRange(0, Isograms.Num() - 1);
+    FString word = Isograms[index];
+
+    // Remove the newly chosen word so we don't pick it again when the user plays again.
+    Isograms.RemoveAt(index);
+
+    return word;
 }
 
 
@@ -77,30 +113,39 @@ void UBullCowCartridge::UpdateStateForGuess(const FString &Guess)
     }
     else
     {
-        // Check how far off the guess was and display the info.
-        PrintLine(TEXT("That's not right.\nYou have %i guess(es) left."), RemainingGuesses);
+        FBullCowCount count = GetBullsAndCows(Guess);
+        PrintLine(TEXT("Your guess had %i Bulls and %i Cows.\nYou have %i guess(es) left."), count.Bulls, count.Cows, RemainingGuesses);
     }
-}
-
-bool UBullCowCartridge::IsIsogram(const FString &Guess) const
-{
-    if (Guess.Len() <= 1)
-        return true;
-
-    for (int32 i = 0; i < Guess.Len() - 1; i++)
-    {
-        for (int32 j = i + 1; j < Guess.Len(); j++)
-        {
-            if (Guess[i] == Guess[j])
-                return false;
-        }
-    }
-
-    return true;
 }
 
 void UBullCowCartridge::EndGame()
 {
     bGameOver = true;
     PrintLine("Press enter to play again.");
+}
+
+// We assume that IsValidGuess has been called on the Guess before being passed in.
+FBullCowCount UBullCowCartridge::GetBullsAndCows(const FString& Guess) const
+{
+    FBullCowCount count;
+
+    for (int32 i = 0; i < Guess.Len(); i++)
+    {
+        if (Guess[i] == HiddenWord[i])
+        {
+            count.Bulls++;
+            continue;
+        }
+
+        for (int32 j = 0; j < HiddenWord.Len(); j++)
+        {
+            if (Guess[i] == HiddenWord[j])
+            {
+                count.Cows++;
+                break;
+            }
+        }
+    }
+
+    return count;
 }
