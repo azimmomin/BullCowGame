@@ -24,7 +24,7 @@ void UBullCowCartridge::BeginPlay()
 {
     Super::BeginPlay();
     LoadEligibleIsograms();
-    SetupGame();
+    ShowStartScreen();
 }
 
 void UBullCowCartridge::LoadEligibleIsograms()
@@ -37,15 +37,77 @@ void UBullCowCartridge::LoadEligibleIsograms()
     );
 }
 
+void UBullCowCartridge::ShowStartScreen()
+{
+    bIsOnStartScreen = true;
+    PrintLine(TEXT("Welcome to Bull Cows!"));
+    PrintLine(TEXT("Enter difficulty. (Ee)asy, (Mm)edium, (Hh)ard"));
+}
+
+void UBullCowCartridge::OnInput(const FString &Input)
+{
+    if (bIsOnStartScreen)
+    {
+        if (GetDifficulty(Input))
+            SetupGame();
+    }
+    else if (Input.ToLower() == TEXT("x"))
+    {
+        ClearScreen();
+        ShowStartScreen();
+    }
+    else if (bGameOver)
+    {
+        // Enter was pressed after the game over screen.
+        ClearScreen();
+        SetupGame();
+    }
+    else if (IsGuessValid(Input))
+    {
+        UpdateStateForGuess(Input);
+    }
+}
+
+bool UBullCowCartridge::GetDifficulty(const FString& Input)
+{
+    FString lowerInput = Input.ToLower();
+    if (lowerInput.Len() <= 0)
+    {
+        PrintLine(TEXT("No input. Try again.\n(Ee)asy, (Mm)edium, (Hh)ard"));
+        return false;
+    }
+
+    if (lowerInput == TEXT("h") || lowerInput == TEXT("hard"))
+    {
+        difficulty = 1;
+        return true;
+    }
+    
+    if (lowerInput == TEXT("m") || lowerInput == TEXT("medium"))
+    {
+        difficulty = 2;
+        return true;
+    }
+    
+    if (lowerInput == TEXT("e") || lowerInput == TEXT("easy"))
+    {
+        difficulty = 3;
+        return true;
+    }
+
+    PrintLine(TEXT("Invalid difficulty. Try again.\n(Ee)asy, (Mm)edium, (Hh)ard"));
+    return false;
+}
+
 void UBullCowCartridge::SetupGame()
 {
     HiddenWord = ChooseAndRemoveHiddenWord(EligibleIsograms);
-    RemainingGuesses = HiddenWord.Len();
+    RemainingGuesses = HiddenWord.Len() * difficulty;
     bGameOver = false;
+    bIsOnStartScreen = false;
 
-    PrintLine(TEXT("Welcome to Bull Cows!"));
     PrintLine(TEXT("Guess the %i character word.\nYou have %i guesses."), HiddenWord.Len(), RemainingGuesses);
-    PrintLine(TEXT("Type in your guess and press enter to\ncontinue."));
+    PrintLine(TEXT("Type in your guess and press enter to\ncontinue.\nYou can exit to the start screen\nby entering 'x'."));
 }
 
 FString UBullCowCartridge::ChooseAndRemoveHiddenWord(TArray<FString>& Isograms) const
@@ -63,20 +125,6 @@ FString UBullCowCartridge::ChooseAndRemoveHiddenWord(TArray<FString>& Isograms) 
     Isograms.RemoveAt(index);
 
     return word;
-}
-
-
-void UBullCowCartridge::OnInput(const FString &Input)
-{
-    if (bGameOver)
-    {
-        ClearScreen();
-        SetupGame();
-    }
-    else if (IsGuessValid(Input))
-    {
-        UpdateStateForGuess(Input);
-    }
 }
 
 bool UBullCowCartridge::IsGuessValid(const FString &Guess) const
@@ -121,7 +169,7 @@ void UBullCowCartridge::UpdateStateForGuess(const FString &Guess)
 void UBullCowCartridge::EndGame()
 {
     bGameOver = true;
-    PrintLine("Press enter to play again.");
+    PrintLine(TEXT("Press enter to play again."));
 }
 
 // We assume that IsValidGuess has been called on the Guess before being passed in.

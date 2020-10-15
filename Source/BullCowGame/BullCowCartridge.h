@@ -23,6 +23,8 @@ public:
 	virtual void OnInput(const FString &Input) override;
 private:
     void LoadEligibleIsograms();
+	void ShowStartScreen();
+	bool GetDifficulty(const FString& Input);
 	void SetupGame();
 	FString ChooseAndRemoveHiddenWord(TArray<FString>& Isograms) const;
 	bool IsGuessValid(const FString& Guess) const;
@@ -32,6 +34,8 @@ private:
 private:
     TArray<FString> EligibleIsograms;
 	FString HiddenWord;
+	int32 difficulty;
 	int32 RemainingGuesses;
 	bool bGameOver;
+	bool bIsOnStartScreen;
 };
